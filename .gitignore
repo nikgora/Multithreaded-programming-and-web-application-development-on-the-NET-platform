@@ -6,3 +6,5 @@
 
 # Ignore JetBrains/IntelliJ .idea folders
 **/.idea/
+
+**/*.DotSettings.user
