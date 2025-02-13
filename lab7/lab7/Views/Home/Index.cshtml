@@ -1,28 +1,8 @@
-﻿@model lab7.Models.IntegrationModel
-
-@{
-    ViewData["Title"] = "Trapezoidal Integral Calculator";
+﻿@{
+    ViewData["Title"] = "Home Page";
 }
 
-<h2>Trapezoidal Integral Calculator</h2>
-
-<form asp-action="Calculate" method="post">
-    <div>
-        <label asp-for="LowerLimit"></label>
-        <input asp-for="LowerLimit" class="form-control" />
-        <span asp-validation-for="LowerLimit" class="text-danger"></span>
-    </div>
-    <div>
-        <label asp-for="UpperLimit"></label>
-        <input asp-for="UpperLimit" class="form-control" />
-        <span asp-validation-for="UpperLimit" class="text-danger"></span>
-    </div>
-    <div>
-        <label asp-for="SubIntervals"></label>
-        <input asp-for="SubIntervals" class="form-control" />
-        <span asp-validation-for="SubIntervals" class="text-danger"></span>
-    </div>
-    <div>
-        <button type="submit" class="btn btn-primary mt-3">Calculate</button>
-    </div>
-</form>
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
