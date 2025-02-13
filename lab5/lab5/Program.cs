@@ -1,13 +1,3 @@
-/*
-* Lab5 - Core Trapezoid, without using MVC
-* Author: Vladyslav Havriutkin
-* Date: 12-02-2025
-* Description: A simple web application that calculates the integral of a function using the trapezoidal rule.
-* The user can choose the function (x², sin(x), or ln(x)), 
-* the lower and upper limits of integration, 
-* and the number of subintervals.
-*/
-
 using System.Globalization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
