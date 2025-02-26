@@ -1,34 +1,12 @@
 using System.Globalization;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-app.MapGet("/", async context =>
-{
-    var html = @"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset=""utf-8"" />
-    <title>Bubble Sort Web App</title>
-</head>
-<body>
-    <h2>Bubble Sort Web Application</h2>
-    <form action=""/sort"" method=""post"">
-        <div>
-            <label for=""numbers"">Enter numbers (comma-separated):</label>
-            <input type=""text"" id=""numbers"" name=""numbers"" required />
-        </div>
-        <div>
-            <button type=""submit"">Sort Numbers</button>
-        </div>
-    </form>
-</body>
-</html>";
-
-    context.Response.ContentType = "text/html";
-    await context.Response.WriteAsync(html);
-});
+// Enable default file mapping and static file serving from wwwroot.
+app.UseDefaultFiles(); // Looks for index.html by default
+app.UseStaticFiles();
 
 app.MapPost("/sort", async context =>
 {
@@ -52,45 +30,39 @@ app.MapPost("/sort", async context =>
 
     // Perform Bubble Sort
     BubbleSort(numbers);
-    
-    var formattedNumbers = string.Join(", ", numbers.Select(n => n.ToString(CultureInfo.InvariantCulture)));
 
-    // Generate response HTML
-    var resultHtml = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset=""utf-8"" />
-    <title>Sorted Numbers</title>
-</head>
-<body>
-    <h2>Sorted Numbers</h2>
-    <p>Original Input: {numbersInput}</p>
-    <p>Sorted Output: <strong>{string.Join(", ", formattedNumbers)}</strong></p>
-    <a href=""/"">Back to Input</a>
-</body>
-</html>";
+    // Prepare the sorted numbers as a comma-separated string
+    var sortedNumbers = string.Join(", ", numbers.Select(n => n.ToString(CultureInfo.InvariantCulture)));
+
+    // Load the external HTML file for the result page.
+    var resultHtmlPath = Path.Combine(app.Environment.WebRootPath, "result.html");
+    var resultHtml = await File.ReadAllTextAsync(resultHtmlPath);
+
+    // Replace placeholders in the HTML template with dynamic values.
+    resultHtml = resultHtml.Replace("{{INPUT}}", numbersInput)
+                           .Replace("{{SORTED}}", sortedNumbers);
 
     context.Response.ContentType = "text/html";
     await context.Response.WriteAsync(resultHtml);
 });
 
-app.Run();
-return;
-
 void BubbleSort(float[] arr)
 {
-    var n = arr.Length;
-    for (var i = 0; i < n - 1; i++)
+    int n = arr.Length;
+    for (int i = 0; i < n - 1; i++)
     {
-        var swapped = false;
-        for (var j = 0; j < n - i - 1; j++)
+        bool swapped = false;
+        for (int j = 0; j < n - i - 1; j++)
         {
-            if (
-                arr[j] <= arr[j + 1]) continue;
-            (arr[j], arr[j + 1]) = (arr[j + 1], arr[j]); // Swap using tuple
-            swapped = true;
+            if (arr[j] > arr[j + 1])
+            {
+                (arr[j], arr[j + 1]) = (arr[j + 1], arr[j]); // Swap using tuple syntax
+                swapped = true;
+            }
         }
-        if (!swapped) break; // Stop if already sorted
+        if (!swapped)
+            break; // Stop if the array is already sorted.
     }
 }
+
+app.Run();

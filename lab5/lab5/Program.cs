@@ -2,41 +2,10 @@ using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
-app.MapGet("/", async context =>
-{
-    var html = @"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset=""utf-8"" />
-    <title>Trapezoidal Integral Calculator</title>
-</head>
-<body>
-    <h2>Trapezoidal Integral Calculator Log10(x) * x + 2 * x + 1</h2>
-    <form action=""/calculate"" method=""post"">
-        <div>
-            <label for=""A"">Lower Limit (A):</label>
-            <input type=""number"" step=""0.01""  id=""A"" name=""A"" required />
-        </div>
-        <div>
-            <label for=""B"">Upper Limit (B):</label>
-            <input type=""number"" step=""any"" id=""B"" name=""B"" required />
-        </div>
-        <div>
-            <label for=""N"">Number of Subintervals (N):</label>
-            <input type=""number"" id=""N"" name=""N"" required min=""1"" />
-        </div>
 
-        <div>
-            <button type=""submit"">Calculate Integral</button>
-        </div>
-    </form>
-</body>
-</html>";
-    
-    context.Response.ContentType = "text/html";
-    await context.Response.WriteAsync(html);
-});
+// Enable serving default files (like index.html) and static files from wwwroot.
+app.UseDefaultFiles(); // Automatically looks for index.html
+app.UseStaticFiles();
 
 app.MapPost("/calculate", async context =>
 {
@@ -71,29 +40,23 @@ app.MapPost("/calculate", async context =>
     }
     double result = sum * h;
 
-    var resultHtml = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset=""utf-8"" />
-    <title>Calculation Result</title>
-</head>
-<body>
-    <h2>Calculation Result</h2>
-    <p>
-        The integral of f(x) =  Log10(x) * x + 2 * x + 1 from {A} to {B} using {n} subintervals is:
-        <strong>{result}</strong>
-    </p>
-    <a href=""/"">Back to Calculator</a>
-</body>
-</html>";
-    
+    // Load the external HTML file for the result page.
+    var resultHtmlPath = Path.Combine(app.Environment.WebRootPath, "result.html");
+    var resultHtml = await File.ReadAllTextAsync(resultHtmlPath);
+
+    // Replace placeholders in the HTML template with dynamic values.
+    resultHtml = resultHtml.Replace("{{A}}", A.ToString())
+                           .Replace("{{B}}", B.ToString())
+                           .Replace("{{N}}", n.ToString())
+                           .Replace("{{RESULT}}", result.ToString());
+
     context.Response.ContentType = "text/html";
     await context.Response.WriteAsync(resultHtml);
 });
 
 double Function(double x)
 {
+    // Note: Math.Log10(x) is only defined for x > 0.
     return Math.Log10(x) * x + 2 * x + 1;
 }
 
