@@ -1,59 +1,67 @@
-﻿namespace lab4;
+﻿using System;
+using System.Threading.Tasks;
 
-static class ParallelQuickSort
+namespace lab4
 {
-    private static void QuickSort(int[] arr, int left, int right)
+    static class ParallelQuickSort
     {
-        if (left >= right) return; // Base case of recursion
-
-        var pivot = Partition(arr, left, right);
-
-        // Use Parallel.Invoke for parallel calls of the left and right partitions
-        Parallel.Invoke(
-            () => QuickSort(arr, left, pivot - 1),
-            () => QuickSort(arr, pivot + 1, right)
-        );
-    }
-
-    private static int Partition(int[] arr, int left, int right)
-    {
-        var pivot = arr[right]; // Pivot element
-        var i = left - 1;
-
-        for (var j = left; j < right; j++)
+        // Create a ParallelOptions instance with MaxDegreeOfParallelism set to the number of processors.
+        private static readonly ParallelOptions ParallelOptions = new ParallelOptions
         {
-            if (arr[j] < pivot)
+            MaxDegreeOfParallelism = Environment.ProcessorCount
+        };
+
+        private static void QuickSort(int[] arr, int left, int right)
+        {
+            if (left >= right) return;
+
+            int pivot = Partition(arr, left, right);
+
+            // Use Parallel.Invoke with specified ParallelOptions
+            Parallel.Invoke(ParallelOptions,
+                () => QuickSort(arr, left, pivot - 1),
+                () => QuickSort(arr, pivot + 1, right)
+            );
+        }
+
+        private static int Partition(int[] arr, int left, int right)
+        {
+            int pivot = arr[right];
+            int i = left - 1;
+
+            for (int j = left; j < right; j++)
             {
-                i++;
-                Swap(arr, i, j);
+                if (arr[j] < pivot)
+                {
+                    i++;
+                    Swap(arr, i, j);
+                }
             }
+            return i + 1;
         }
 
-        Swap(arr, i + 1, right);
-        return i + 1; // New pivot element position
-    }
-
-    private static void Swap(int[] arr, int i, int j)
-    {
-        (arr[i], arr[j]) = (arr[j], arr[i]);
-    }
-
-    private static void Main()
-    {
-        Console.Write("Enter the length of the array: ");
-        var length = int.Parse(Console.ReadLine() ?? "10");
-
-        var arr = new int[length];
-        var random = new Random();
-        for (var i = 0; i < length; i++)
+        private static void Swap(int[] arr, int i, int j)
         {
-            arr[i] = random.Next(0, 101); // Filling with random numbers in the range 0-100
+            (arr[i], arr[j]) = (arr[j], arr[i]);
         }
 
-        Console.WriteLine("Generated array: " + string.Join(", ", arr));
+        private static void Main()
+        {
+            Console.Write("Enter the length of the array: ");
+            int length = int.Parse(Console.ReadLine() ?? "10");
 
-        QuickSort(arr, 0, arr.Length - 1);
+            int[] arr = new int[length];
+            Random random = new Random();
+            for (int i = 0; i < length; i++)
+            {
+                arr[i] = random.Next(0, 101);
+            }
 
-        Console.WriteLine("Sorted array: " + string.Join(", ", arr));
+            Console.WriteLine("Generated array: " + string.Join(", ", arr));
+
+            QuickSort(arr, 0, arr.Length - 1);
+
+            Console.WriteLine("Sorted array: " + string.Join(", ", arr));
+        }
     }
 }

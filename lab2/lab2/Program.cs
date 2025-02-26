@@ -2,35 +2,84 @@
 
 static class ParallelQuickSort
 {
+    private static readonly int MaxThreads = Environment.ProcessorCount;
+    private static int _activeThreads;
+    private static readonly object LockObject = new();
+
     private static async Task QuickSort(int[] arr, int left, int right)
     {
+        if (left >= right) return; // Base case
 
-        if (left >= right) return; // Base case of recursion
+        int pivot = Partition(arr, left, right);
 
-        var pivot = Partition(arr, left, right);
+        bool leftTaskCreated = false;
+        bool rightTaskCreated = false;
+        Task? leftTask = null;
+        Task? rightTask = null;
 
-        // Recursively sort the left and right parts in parallel
-        var leftTask = QuickSort(arr, left, pivot - 1);
-        var rightTask = QuickSort(arr, pivot + 1, right);
+        // Try to process left partition in a new Task if allowed
+        lock (LockObject)
+        {
+            if (_activeThreads < MaxThreads)
+            {
+                _activeThreads++;
+                leftTaskCreated = true;
+                leftTask = Task.Run(() => QuickSort(arr, left, pivot - 1));
+            }
+        }
 
-        // Wait for both sides to finish
-        await Task.WhenAll(leftTask, rightTask);
+        // Try to process right partition in a new Task if allowed
+        lock (LockObject)
+        {
+            if (_activeThreads < MaxThreads)
+            {
+                _activeThreads++;
+                rightTaskCreated = true;
+                rightTask = Task.Run(() => QuickSort(arr, pivot + 1, right));
+            }
+        }
+
+        // Wait for the left Task if it was created; otherwise, process sequentially
+        if (leftTaskCreated)
+        {
+            await leftTask!;
+            lock (LockObject)
+            {
+                _activeThreads--;
+            }
+        }
+        else
+        {
+            await QuickSort(arr, left, pivot - 1);
+        }
+
+        // Wait for the right Task if it was created; otherwise, process sequentially
+        if (rightTaskCreated)
+        {
+            await rightTask!;
+            lock (LockObject)
+            {
+                _activeThreads--;
+            }
+        }
+        else
+        {
+            await QuickSort(arr, pivot + 1, right);
+        }
     }
-    
+
     private static int Partition(int[] arr, int left, int right)
     {
-        var pivotValue = arr[right];  // Choose pivot from the end
-        var i = left - 1;
-
-        for (var j = left; j < right; j++)
+        int pivotValue = arr[right]; // choose pivot from end
+        int i = left - 1;
+        for (int j = left; j < right; j++)
         {
             if (arr[j] >= pivotValue) continue;
             i++;
             Swap(arr, i, j);
         }
-
         Swap(arr, i + 1, right);
-        return i + 1; // New pivot index
+        return i + 1;
     }
 
     private static void Swap(int[] arr, int i, int j)
@@ -45,15 +94,13 @@ static class ParallelQuickSort
 
         var arr = new int[length];
         var random = new Random();
-        for (var i = 0; i < length; i++)
+        for (int i = 0; i < length; i++)
         {
             arr[i] = random.Next(0, 101);
         }
 
         Console.WriteLine("Initial array: " + string.Join(", ", arr));
-
         await QuickSort(arr, 0, arr.Length - 1);
-
         Console.WriteLine("Sorted array: " + string.Join(", ", arr));
     }
 }
